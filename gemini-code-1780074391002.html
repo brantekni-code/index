@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Seguridad EHS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px; /* Evita zoom automático en iOS */
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        .radio-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        /* Estilos dinámicos para las opciones */
+        #opt-seguro.selected {
+            border-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        #opt-inseguro.selected {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            width: 100%;
+            background-color: #0056b3;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #004085;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>⚠️ Reporte de Seguridad (EHS)</h2>
+    
+    <form id="ehsForm">
+        <div class="form-group">
+            <label for="colaborador">Colaborador / Reporta:</label>
+            <input type="text" id="colaborador" name="colaborador" placeholder="Nombre o No. de Empleado" required>
+        </div>
+
+        <div class="form-group">
+            <label for="area">Área de la Planta:</label>
+            <select id="area" name="area" required>
+                <option value="">-- Selecciona el área --</option>
+                <option value="Inyección">Inyección</option>
+                <option value="Enmangado">Enmangado</option>
+                <option value="Termoformado">Termoformado</option>
+                <option value="Impresión">Impresión</option>
+                <option value="Alta Barrera">Alta Barrera</option>
+                <option value="Dip-tube">Dip-tube</option>
+                <option value="Flexo">Flexo</option>
+                <option value="Troquelado">Troquelado</option>
+                <option value="Slitter">Slitter</option>
+                <option value="Formado">Formado</option>
+                <option value="Mecanizado">Mecanizado</option>
+                <option value="Moldes inyección">Moldes inyección</option>
+                <option value="Extrusión">Extrusión</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Tipo de Hallazgo:</label>
+            <div class="radio-group">
+                <div id="opt-seguro" class="radio-option" onclick="selectTipo('Seguro')">🟢 Acto Seguro</div>
+                <div id="opt-inseguro" class="radio-option" onclick="selectTipo('Inseguro')">🔴 Acto Inseguro</div>
+            </div>
+            <input type="hidden" id="tipoActo" name="tipo" required>
+        </div>
+
+        <div class="form-group">
+            <label for="descripcion">Descripción de la Actividad / Condición:</label>
+            <textarea id="descripcion" name="descripcion" placeholder="Detalla lo observado..." required></textarea>
+        </div>
+
+        <button type="submit" id="btnEnviar">Enviar Reporte</button>
+    </form>
+</div>
+
+<script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzBzliYQFAU99eo5MBznxfT2L1xQ3SdeeaHuC6OW9IbX77SRYvcJXHGN1-0CrDQzqhA/exec';
+
+    // Función para manejar la selección visual de los botones de tipo de acto
+    function selectTipo(tipo) {
+        document.getElementById('tipoActo').value = tipo;
+        
+        const optSeguro = document.getElementById('opt-seguro');
+        const optInseguro = document.getElementById('opt-inseguro');
+        
+        if(tipo === 'Seguro') {
+            optSeguro.classList.add('selected');
+            optInseguro.classList.remove('selected');
+        } else {
+            optInseguro.classList.add('selected');
+            optSeguro.classList.remove('selected');
+        }
+    }
+
+    // Autoselección por URL para los códigos QR
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoQR = urlParams.get('tipo');
+        if (tipoQR === 'verde') selectTipo('Seguro');
+        if (tipoQR === 'rojo') selectTipo('Inseguro');
+    }
+
+    // Manejo del envío del formulario
+    document.getElementById('ehsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const tipoActo = document.getElementById('tipoActo').value;
+        if(!tipoActo) {
+            alert('Por favor, selecciona si es un Acto Seguro o Inseguro.');
+            return;
+        }
+
+        const btnEnviar = document.getElementById('btnEnviar');
+        btnEnviar.disabled = true;
+        btnEnviar.innerText = 'Enviando...';
+
+        // Usamos FormData para empaquetar fácilmente los inputs que tienen el atributo "name"
+        const formData = new FormData(this);
+
+        // Enviamos los datos usando fetch (con el modo 'no-cors' por si el script no devuelve cabeceras CORS)
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            body: formData
+        })
+        .then(() => {
+            alert('¡Reporte registrado con éxito en el sistema EHS y Google Sheets!');
+            
+            // Limpieza del formulario
+            this.reset();
+            document.getElementById('opt-seguro').classList.remove('selected');
+            document.getElementById('opt-inseguro').classList.remove('selected');
+        })
+        .catch(error => {
+            console.error('Error al enviar:', error);
+            alert('Hubo un problema al enviar el reporte. Por favor, inténtalo de nuevo.');
+        })
+        .finally(() => {
+            // Reestablecer el botón siempre
+            btnEnviar.disabled = false;
+            btnEnviar.innerText = 'Enviar Reporte';
+        });
+    });
+</script>
+
+</body>
+</html>
