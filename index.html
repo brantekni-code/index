@@ -101,12 +101,12 @@
     <form id="ehsForm">
         <div class="form-group">
             <label for="colaborador">Colaborador / Reporta:</label>
-            <input type="text" id="colaborador" name="colaborador" placeholder="Nombre o No. de Empleado" required>
+            <input type="text" id="colaborador" placeholder="Nombre o No. de Empleado" required>
         </div>
 
         <div class="form-group">
             <label for="area">Área de la Planta:</label>
-            <select id="area" name="area" required>
+            <select id="area" required>
                 <option value="">-- Selecciona el área --</option>
                 <option value="Inyección">Inyección</option>
                 <option value="Enmangado">Enmangado</option>
@@ -130,12 +130,12 @@
                 <div id="opt-seguro" class="radio-option" onclick="selectTipo('Seguro')">🟢 Acto Seguro</div>
                 <div id="opt-inseguro" class="radio-option" onclick="selectTipo('Inseguro')">🔴 Acto Inseguro</div>
             </div>
-            <input type="hidden" id="tipoActo" name="tipo" required>
+            <input type="hidden" id="tipoActo" required>
         </div>
 
         <div class="form-group">
             <label for="descripcion">Descripción de la Actividad / Condición:</label>
-            <textarea id="descripcion" name="descripcion" placeholder="Detalla lo observado..." required></textarea>
+            <textarea id="descripcion" placeholder="Detalla lo observado..." required></textarea>
         </div>
 
         <button type="submit" id="btnEnviar">Enviar Reporte</button>
@@ -143,7 +143,8 @@
 </div>
 
 <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby_44P4cabZ2IvyIdZZNbix7AQzeEenhKs9wCi7fKiRssa7E-b4mrA1meRreDOvb9UR/exec';
+    // URL de tu Google Apps Script
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfPdlIkniuLuuzuiSJrITQTnnrruhylF9t82Q9IyKb_fI96CG0BRj1vPvYsrB6tF1V/exec';
 
     // Función para manejar la selección visual de los botones de tipo de acto
     function selectTipo(tipo) {
@@ -183,14 +184,21 @@
         btnEnviar.disabled = true;
         btnEnviar.innerText = 'Enviando...';
 
-        // Usamos FormData para empaquetar fácilmente los inputs que tienen el atributo "name"
-        const formData = new FormData(this);
+        // Recolectamos los datos del formulario de forma limpia
+        const datos = {
+            colaborador: document.getElementById('colaborador').value,
+            area: document.getElementById('area').value,
+            tipo: tipoActo,
+            descripcion: document.getElementById('descripcion').value
+        };
 
-        // Enviamos los datos usando fetch (con el modo 'no-cors' por si el script no devuelve cabeceras CORS)
-        fetch(WEB_APP_URL, {
+        // Convertimos el objeto en parámetros URL (?colaborador=...&area=...)
+        const urlConParametros = WEB_APP_URL + '?' + new URLSearchParams(datos).toString();
+
+        // Enviamos la petición por método POST
+        fetch(urlConParametros, {
             method: 'POST',
-            mode: 'no-cors', 
-            body: formData
+            mode: 'no-cors'
         })
         .then(() => {
             alert('¡Reporte registrado con éxito en el sistema EHS y Google Sheets!');
@@ -205,7 +213,6 @@
             alert('Hubo un problema al enviar el reporte. Por favor, inténtalo de nuevo.');
         })
         .finally(() => {
-            // Reestablecer el botón siempre
             btnEnviar.disabled = false;
             btnEnviar.innerText = 'Enviar Reporte';
         });
