@@ -22,6 +22,9 @@
             --red: #ef4444;
             --red-dim: rgba(239,68,68,0.15);
             --red-border: rgba(239,68,68,0.5);
+            --orange: #f59e0b;
+            --orange-dim: rgba(245,158,11,0.1);
+            --orange-border: rgba(245,158,11,0.4);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -139,6 +142,13 @@
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
+        
+        /* Estilo especial para el enfoque del Folio Manual */
+        #folio:focus {
+            border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+        }
+
         select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a89b0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -196,6 +206,20 @@
             box-shadow: 0 0 16px rgba(239,68,68,0.12);
         }
         #opt-inseguro.selected .tipo-label { color: var(--red); }
+
+        /* Contenedor dinámico del Folio animado */
+        .animated-collapse {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease;
+            margin-bottom: 0;
+        }
+        .animated-collapse.show {
+            max-height: 100px;
+            opacity: 1;
+            margin-bottom: 20px;
+        }
 
         /* Divider */
         .divider {
@@ -450,8 +474,13 @@
 
     <div class="card-body">
         <div class="form-group">
-            <label for="colaborador">Colaborador / Reporta</label>
-            <input type="text" id="colaborador" placeholder="Nombre o No. de Empleado" required>
+            <label for="auditor">Auditor</label>
+            <input type="text" id="auditor" placeholder="Nombre del Auditor" required>
+        </div>
+
+        <div class="form-group">
+            <label for="auditado">Auditado</label>
+            <input type="text" id="auditado" placeholder="Nombre del Auditado" required>
         </div>
 
         <div class="form-group">
@@ -489,6 +518,12 @@
             <input type="hidden" id="tipoActo">
         </div>
 
+        <!-- SECCIÓN MODIFICADA: Entrada manual de Folio -->
+        <div id="wrapperFolio" class="form-group animated-collapse">
+            <label for="folio">Folio del Acto Inseguro</label>
+            <input type="text" id="folio" placeholder="Escribe el folio asignado...">
+        </div>
+
         <div class="divider"></div>
 
         <div class="form-group">
@@ -501,12 +536,24 @@
 </div>
 
 <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfPdlIkniuLuuzuiSJrITQTnnrruhylF9t82Q9IyKb_fI96CG0BRj1vPvYsrB6tF1V/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwmQRbmGvmtqEG6mOHdtz3zz_OBfPd8qK8n1416uex-KIFea7BAfdqZRm1dQGcQWI-L/exec';
 
     function selectTipo(tipo) {
         document.getElementById('tipoActo').value = tipo;
         document.getElementById('opt-seguro').classList.toggle('selected', tipo === 'Seguro');
         document.getElementById('opt-inseguro').classList.toggle('selected', tipo === 'Inseguro');
+
+        const wrapperFolio = document.getElementById('wrapperFolio');
+        const inputFolio = document.getElementById('folio');
+
+        if (tipo === 'Inseguro') {
+            wrapperFolio.classList.add('show');
+            // Se le da foco automático al campo para facilitar la escritura del usuario
+            setTimeout(() => inputFolio.focus(), 200);
+        } else {
+            wrapperFolio.classList.remove('show');
+            inputFolio.value = ''; // Limpia el valor si cambia a Seguro
+        }
     }
 
     window.onload = function () {
@@ -538,21 +585,26 @@
     function closeSuccess() {
         document.getElementById('successOverlay').classList.remove('visible');
         // Reset form
-        document.getElementById('colaborador').value = '';
+        document.getElementById('auditor').value = '';
+        document.getElementById('auditado').value = '';
         document.getElementById('area').value = '';
         document.getElementById('descripcion').value = '';
         document.getElementById('tipoActo').value = '';
+        document.getElementById('folio').value = '';
+        document.getElementById('wrapperFolio').classList.remove('show');
         document.getElementById('opt-seguro').classList.remove('selected');
         document.getElementById('opt-inseguro').classList.remove('selected');
     }
 
     function handleSubmit() {
-        const colaborador = document.getElementById('colaborador').value.trim();
+        const auditor = document.getElementById('auditor').value.trim();
+        const auditado = document.getElementById('auditado').value.trim();
         const area = document.getElementById('area').value;
         const tipo = document.getElementById('tipoActo').value;
+        const folio = document.getElementById('folio').value.trim();
         const descripcion = document.getElementById('descripcion').value.trim();
 
-        if (!colaborador || !area || !descripcion) {
+        if (!auditor || !auditado || !area || !descripcion) {
             alert('Por favor, completa todos los campos.');
             return;
         }
@@ -560,12 +612,19 @@
             alert('Por favor, selecciona si es un Acto Seguro o Inseguro.');
             return;
         }
+        
+        // NUEVA VALIDACIÓN: Si es inseguro, el folio manual no puede estar en blanco
+        if (tipo === 'Inseguro' && !folio) {
+            alert('Por favor, ingresa el Folio correspondiente para este Acto Inseguro.');
+            document.getElementById('folio').focus();
+            return;
+        }
 
         const btn = document.getElementById('btnEnviar');
         btn.disabled = true;
         btn.textContent = 'Enviando…';
 
-        const datos = { colaborador, area, tipo, descripcion };
+        const datos = { auditor, auditado, area, tipo, folio, descripcion };
         const url = WEB_APP_URL + '?' + new URLSearchParams(datos).toString();
 
         fetch(url, { method: 'POST', mode: 'no-cors' })
